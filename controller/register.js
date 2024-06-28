@@ -1,7 +1,24 @@
 import Admin from "../models/adminSchema";
+import Teacher from "../models/teacherSchema";
+import Student from "../models/studentSchema";
 import bcrypt from "bycrypt";
 
-const adminRegister = async (req, res) => {
+const saltRounds = 10;
+
+function generateUniqueId() {
+    return new Promise((resolve, reject) => {
+        bcrypt.genSalt(saltRounds, (err, salt) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(salt);
+            }
+        });
+    });
+}
+
+
+export const adminRegister = async (req, res) => {
     try {
         
         const admin = new Admin({
@@ -10,7 +27,7 @@ const adminRegister = async (req, res) => {
         
         const existingAdminByEmail = await Admin.findOne({ email: req.body.email });
         const existingSchool = await Admin.findOne({ schoolName: req.body.schoolName });
-        const existingWallet = await Admin.findOne({ schoolName: req.body.saddress});
+        const existingWallet = await Admin.findOne({ schoolName: req.body.address});
 
 
         if (existingAdminByEmail) {
@@ -23,8 +40,11 @@ const adminRegister = async (req, res) => {
             res.send({ message: 'wallet already exixts' })
         }
         else {
+            const id1 = await generateUniqueId();
+            const id2 = await generateUniqueId();
+            admin.studentCode= id1;
+            admin.teacherCode=id2;
             let result = await admin.save();
-            result.password = undefined;
             res.send(result);
         }
     } catch (err) {
@@ -32,20 +52,62 @@ const adminRegister = async (req, res) => {
     }
 };
 
-const adminLogIn = async (req, res) => {
-    if (req.body.email && req.body.password) {
-        let admin = await Admin.findOne({ email: req.body.email });
-        if (admin) {
-            if (req.body.password === admin.password) {
-                admin.password = undefined;
-                res.send(admin);
-            } else {
-                res.send({ message: "Invalid password" });
-            }
-        } else {
-            res.send({ message: "User not found" });
+export const studentRegister = async (req, res) => {
+    try {
+        
+        const student = new Student({
+            ...req.body
+        });//sending -- name ,email,uid,address
+        
+        const existingStudentByEmail = await Student.findOne({ email: req.body.email });
+        const existingWallet = await Student.findOne({ schoolName: req.body.saddress});
+        const uidd = await Admin.findOne({ schoolCode: req.body.uid});
+        if(uidd){
+        if (existingStudentByEmail) {
+            res.send({ message: 'Email already exists' });
         }
-    } else {
-        res.send({ message: "Email and password are required" });
+        else if(existingWallet){
+            res.send({ message: 'wallet already exixts' })
+        }
+        else {
+            let result = await admin.save();
+            res.send(result);
+        }
+        }
+        else{
+            res.send({ message: 'invalid uid' })
+        }
+    } catch (err) {
+        res.status(500).json(err);
+    }
+};
+
+export const teacherRegister = async (req, res) => {
+    try {
+        
+        const student = new Student({
+            ...req.body
+        });//sending -- name ,email,uid,address
+        
+        const existingStudentByEmail = await Teacher.findOne({ email: req.body.email });
+        const existingWallet = await Teacher.findOne({ schoolName: req.body.saddress});
+        const uidd = await Admin.findOne({ schoolCode: req.body.uid});
+        if(uidd){
+        if (existingStudentByEmail) {
+            res.send({ message: 'Email already exists' });
+        }
+        else if(existingWallet){
+            res.send({ message: 'wallet already exixts' })
+        }
+        else {
+            let result = await Admin.save();
+            res.send(result);
+        }
+        }
+        else{
+            res.send({ message: 'invalid uid' })
+        }
+    } catch (err) {
+        res.status(500).json(err);
     }
 };
